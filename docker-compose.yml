@@ -1,0 +1,25 @@
+version: "3"
+services: 
+    web:
+        image: node:12-alpine
+        working_dir: /code
+        volumes: 
+            - .:/code
+        ports: 
+            - "7001:7001"
+        command: npm run dev
+    mysql:
+        image: mysql:5.7
+        volumes: 
+            - ./data:/var/lib/mysql
+        environment: 
+            - MYSQL_ROOT_PASSWORD=123456   #mysql的root密码
+            - MYSQL_DATABASE=egg_db     #mysql的初始化数据库
+        ports:
+            - "3306:3306"
+    nginx:
+        image: nginx:1.17
+        volumes: 
+            - ./config/nginx.conf:/etc/nginx/conf.d/default.conf
+        ports: 
+            - "80:80"
