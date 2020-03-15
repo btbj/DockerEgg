@@ -2,9 +2,10 @@
 
 const Service = require('egg').Service;
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 class UserService extends Service {
-  async signJwt(user) {
+  signJwt(user) {
     const token = jwt.sign(
       { id: user.id, username: user.username },
       this.config.jwt.secret,
@@ -14,7 +15,6 @@ class UserService extends Service {
   }
 
   verifyJwt(token) {
-    const ctx = this.ctx;
     try {
       const authUser = jwt.verify(
         token,
@@ -22,8 +22,22 @@ class UserService extends Service {
       );
       return authUser;
     } catch (error) {
-      ctx.body = error;
       return null;
+    }
+  }
+
+  async hashPwd(password) {
+    const saltRounds = 10;
+    const salt = await bcrypt.genSalt(saltRounds);
+    const hash = await bcrypt.hash(password, salt);
+    return hash;
+  }
+
+  async comparePwd(password, hash) {
+    try {
+      return await bcrypt.compare(password, hash);
+    } catch (error) {
+      return false;
     }
   }
 }

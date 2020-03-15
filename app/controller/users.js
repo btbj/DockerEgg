@@ -11,7 +11,14 @@ class UserController extends Controller {
   async register() {
     const ctx = this.ctx;
     const { username, password } = ctx.request.body;
-    const user = await ctx.model.User.create({ username, password });
+    const hashPwd = await ctx.service.user.hashPwd(password);
+    // const user = await ctx.model.User.create({ username, password });
+    const user = await ctx.model.User.create(
+      {
+        username,
+        password: hashPwd,
+      }
+    );
     ctx.status = 201;
     ctx.body = user;
   }
@@ -45,14 +52,16 @@ class UserController extends Controller {
       };
       return;
     }
-    if (existsUser.password !== password) {
+    const isRightPwd = await ctx.service.user.comparePwd(password, existsUser.password);
+    // const isRightPwd = existsUser.password === password;
+    if (!isRightPwd) {
       ctx.body = {
         success: false,
         message: 'password error',
       };
       return;
     }
-    const token = await this.service.user.signJwt(existsUser);
+    const token = this.service.user.signJwt(existsUser);
     ctx.body = {
       success: true,
       data: {
