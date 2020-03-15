@@ -9,8 +9,8 @@ module.exports = {
         primaryKey: true,
         autoIncrement: true,
       },
-      name: STRING(30),
-      age: INTEGER,
+      username: STRING(50),
+      password: STRING(255),
       created_at: DATE,
       updated_at: DATE,
     });

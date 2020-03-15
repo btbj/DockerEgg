@@ -2,56 +2,64 @@
 
 const Controller = require('egg').Controller;
 
-function toInt(str) {
-  // if (typeof str === 'number') return str;
+const toInt = str => {
   if (!str) return str;
   return parseInt(str, 10) || 0;
-}
+};
 
 class UserController extends Controller {
-  async index() {
+  async register() {
     const ctx = this.ctx;
-    const query = { limit: toInt(ctx.query.limit), offset: toInt(ctx.query.offset) };
-    ctx.body = await ctx.model.User.findAll(query);
-  }
-
-  async show() {
-    const ctx = this.ctx;
-    ctx.body = await ctx.model.User.findByPk(toInt(ctx.params.id));
-  }
-
-  async create() {
-    const ctx = this.ctx;
-    const { name, age } = ctx.request.body;
-    const user = await ctx.model.User.create({ name, age });
+    const { username, password } = ctx.request.body;
+    const user = await ctx.model.User.create({ username, password });
     ctx.status = 201;
     ctx.body = user;
   }
 
-  async update() {
+  async info() {
     const ctx = this.ctx;
-    const id = toInt(ctx.params.id);
+    const id = toInt(ctx.request.body.id);
+    const authUser = ctx.request.body.authUser;
+    if (id !== authUser.id) {
+      ctx.status = 404;
+      return;
+    }
     const user = await ctx.model.User.findByPk(id);
     if (!user) {
       ctx.status = 404;
       return;
     }
-
-    const { name, age } = ctx.request.body;
-    await user.update({ name, age });
     ctx.body = user;
   }
 
-  async destroy() {
+  async login() {
     const ctx = this.ctx;
-    const id = toInt(ctx.params.id);
-    const user = await ctx.model.User.findByPk(id);
-    if (!user) {
-      ctx.status = 404;
+    const { username, password } = ctx.request.body;
+    const existsUser = await ctx.model.User.findOne({
+      where: { username },
+    });
+    if (!existsUser) {
+      ctx.body = {
+        success: false,
+        message: 'no user',
+      };
       return;
     }
-    await user.destroy();
-    ctx.status = 200;
+    if (existsUser.password !== password) {
+      ctx.body = {
+        success: false,
+        message: 'password error',
+      };
+      return;
+    }
+    const token = await this.service.user.signJwt(existsUser);
+    ctx.body = {
+      success: true,
+      data: {
+        token,
+        user: existsUser,
+      },
+    };
   }
 }
 
